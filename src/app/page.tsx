@@ -64,13 +64,26 @@ export default function PilgrimHub() {
         setAiResponse(data.message || "Request sent successfully.");
         setActiveIntent(data.intent || "FAQ");
 
-        // --- NEW: Native Browser Text-to-Speech ---
-        window.speechSynthesis.cancel(); // Stop any existing audio
+        // --- UPGRADED: Native Browser Text-to-Speech ---
+        const synth = window.speechSynthesis;
+        synth.cancel(); // Stop any existing audio
         const speech = new SpeechSynthesisUtterance(data.message);
-        if (data.language) {
-          speech.lang = data.language; // Helps the browser choose the right local accent
+        
+        // Grab all available voices on the computer
+        const voices = synth.getVoices();
+        
+        if (data.language === 'hi') {
+          speech.lang = 'hi-IN';
+          // Force it to use a voice that specifically supports Hindi or Indian English
+          const hindiVoice = voices.find(v => v.lang.includes('hi') || v.lang.includes('IN'));
+          if (hindiVoice) {
+            speech.voice = hindiVoice;
+          }
+        } else if (data.language) {
+          speech.lang = data.language; 
         }
-        window.speechSynthesis.speak(speech);
+        
+        synth.speak(speech);
         // -----------------------------------------
 
       } else {
