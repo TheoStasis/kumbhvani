@@ -35,7 +35,7 @@ export async function POST(req: Request) {
 
     const whisperData = await whisperRes.json();
     const transcript = whisperData.text;
-    console.log("WHISPER HEARD:", transcript);
+    // console.log("WHISPER HEARD:", transcript);
 
     if (!transcript) {
       return NextResponse.json({ message: "Could not hear any speech. Please try again." });
