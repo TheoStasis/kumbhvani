@@ -62,6 +62,29 @@ export async function POST(req: Request) {
           response_format: { type: "json_object" } 
         })
       });
+      if (!llamaRes.ok) {
+        const errorDetails = await llamaRes.text();
+        console.error("Groq LLaMA Error Details:", errorDetails);
+        throw new Error(`LLaMA API failed: ${llamaRes.statusText}`);
+     }
+ 
+     const llamaData = await llamaRes.json();
+     const aiDecision = JSON.parse(llamaData.choices[0].message.content);
+ 
+     // --- STEP 3: THE SPLIT ---
+     if (aiDecision.intent === "EMERGENCY") {
+       
+       // THE PANIC LANE
+       const { error } = await supabase.from('emergency_dispatches').insert({
+         location: aiDecision.location || "Unknown Location",
+         emergency_type: aiDecision.summary,
+         original_audio_text: transcript
+       });
+ 
+       if (error) {
+         console.error("Supabase Error:", error);
+         return NextResponse.json({ message: "System error logging dispatch." }, { status: 500 });
+       }
 
 
 
