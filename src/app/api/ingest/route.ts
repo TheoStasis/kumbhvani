@@ -47,6 +47,21 @@ export async function POST(req: Request) {
       Extract the location if mentioned.
       You MUST return valid JSON ONLY.
       Format: {"intent": "EMERGENCY" | "NAVIGATION" | "EVENTS" | "SERVICES" | "ACCOMMODATION" | "FAQ", "location": "string or null", "summary": "string"}`;
+      const llamaRes = await fetch("https://api.groq.com/openai/v1/chat/completions", {
+        method: "POST",
+        headers: {
+          "Authorization": `Bearer ${process.env.GROQ_API_KEY}`,
+          "Content-Type": "application/json"
+        },
+        body: JSON.stringify({
+          model: "llama-3.1-8b-instant",
+          messages: [
+            { role: "system", content: systemPrompt },
+            { role: "user", content: transcript }
+          ],
+          response_format: { type: "json_object" } 
+        })
+      });
 
 
 
