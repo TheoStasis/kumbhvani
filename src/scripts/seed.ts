@@ -36,3 +36,27 @@ const mahakumbhData = [
       content: 'Free meals, known as Bhandara, are served 24 hours a day at the main Akhaada tents located throughout Sector 6.'
     }
   ];
+  async function seedDatabase() {
+    console.log("Starting vector generation and database seeding...");
+    
+    for (const item of mahakumbhData) {
+      console.log(`Generating embedding for: ${item.title}`);
+      try {
+        const vector = await generateEmbedding(item.content);
+        
+        const { error } = await supabase.from('mahakumbh_knowledge').insert({
+          category: item.category,
+          title: item.title,
+          content: item.content,
+          embedding: vector
+        });
+  
+        if (error) {
+          console.error(`❌ Error inserting ${item.title}:`, error.message);
+        } else {
+          console.log(`✅ Successfully inserted ${item.title}`);
+        }
+      } catch (err) {
+        console.error(`💥 Failed to process ${item.title}:`, err);
+      }
+    }
