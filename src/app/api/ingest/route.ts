@@ -85,6 +85,41 @@ export async function POST(req: Request) {
          console.error("Supabase Error:", error);
          return NextResponse.json({ message: "System error logging dispatch." }, { status: 500 });
        }
+       return NextResponse.json({ 
+        message: `EMERGENCY DISPATCHED: Help is on the way to ${aiDecision.location || "your location"}.`,
+        intent: aiDecision.intent
+      });
+      
+    } else {
+      
+      // THE CALM LANE (RAG PIPELINE)
+      // 1. Convert user's question into a math vector
+      const queryVector = await generateEmbedding(transcript);
+
+      // 2. Mathematically search the guidebook database
+      const { data: matchedFacts, error: rpcError } = await supabase.rpc('match_mahakumbh_knowledge', {
+        query_embedding: queryVector,
+        match_threshold: 0.3, // Lower threshold to ensure we catch similarities
+        match_count: 3
+      });
+
+      if (rpcError) {
+        console.error("Supabase RPC Error:", rpcError);
+        return NextResponse.json({ message: "System error searching guidebook." }, { status: 500 });
+      }
+
+      // 3. Extract the text from the top matches
+      const knowledgeContext = matchedFacts && matchedFacts.length > 0
+        ? matchedFacts.map((fact: any) => fact.content).join("\n\n")
+        : "No specific information found in the guidebook for this query.";
+
+      // 4. Send the facts + the user's question back to the LLM to synthesize an answer
+      const ragPrompt = `You are KumbhVani, a helpful assistant at the Mahakumbh festival.
+      Answer the user's query using ONLY the provided knowledge context below. Keep it conversational, warm, and concise (1-2 sentences).
+      If the context does not contain the answer, politely say you don't have that specific information but direct them to the nearest help desk.
+      
+      KNOWLEDGE CONTEXT:
+      ${knowledgeContext}`;
 
 
 
