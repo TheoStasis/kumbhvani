@@ -21,7 +21,7 @@ export async function POST(req: Request) {
     groqAudioFormData.append("file", audioFile);
     groqAudioFormData.append("model", "whisper-large-v3");
 
-    const whisperRes = await fetch("https://api.groq.com/openai/v1/audio/transcriptions", {
+    const whisperRes = await fetch("https://api.groq.com/openai/v1/audio/translations", {
       method: "POST",
       headers: {
         "Authorization": `Bearer ${process.env.GROQ_API_KEY}`
