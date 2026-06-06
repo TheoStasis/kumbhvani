@@ -21,7 +21,7 @@ export async function POST(req: Request) {
     groqAudioFormData.append("model", "whisper-large-v3");
     groqAudioFormData.append("response_format", "verbose_json"); // NEW: Force Whisper to return the language code
 
-    const whisperRes = await fetch("https://api.groq.com/openai/v1/audio/translations", {
+    const whisperRes = await fetch("https://api.groq.com/openai/v1/audio/transcriptions", {
       method: "POST",
       headers: { "Authorization": `Bearer ${process.env.GROQ_API_KEY}` },
       body: groqAudioFormData
