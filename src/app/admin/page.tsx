@@ -92,3 +92,17 @@ export default function AdminDashboard() {
                 <p className="text-xl font-bold text-neutral-800">
                   Threat: {alert.emergency_type}
                 </p>
+                <div className="bg-neutral-50 p-4 rounded-lg border border-neutral-200 mt-2">
+                  <p className="text-sm text-neutral-500 font-bold mb-1 uppercase tracking-wider">Raw Transcript:</p>
+                  <p className="text-lg text-neutral-800 font-mono italic">
+                    "{alert.original_audio_text}"
+                  </p>
+                </div>
+              </div>
+            ))}
+          </div>
+        )}
+      </div>
+    </div>
+  );
+}
