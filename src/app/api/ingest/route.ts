@@ -42,11 +42,13 @@ export async function POST(req: Request) {
       // --- STEP 2: INTENT CLASSIFICATION (Groq LLaMA 3) ---
       // UPDATED: Now categorizes into specific Mahakumbh services
       const systemPrompt = `You are a Mahakumbh emergency router. 
-      Determine if the user's text is a dangerous situation (EMERGENCY) or a general inquiry (NAVIGATION, EVENTS, SERVICES, ACCOMMODATION, FAQ).
-      EMERGENCY triggers include: fire, stampede, crushing, injury, or urgent calls for help.
-      Extract the location if mentioned.
-      You MUST return valid JSON ONLY.
-      Format: {"intent": "EMERGENCY" | "NAVIGATION" | "EVENTS" | "SERVICES" | "ACCOMMODATION" | "FAQ", "location": "string or null", "summary": "string"}`;
+    Determine if the user's text is a dangerous situation (EMERGENCY) or a general inquiry (NAVIGATION, EVENTS, SERVICES, ACCOMMODATION, FAQ).
+    EMERGENCY triggers include: fire, stampede, crushing, injury, or urgent calls for help.
+    CRITICAL RULE: If the text is conversational, unclear, or just a short phrase with no obvious threat (e.g., "yes", "hello", "I am coming"), you MUST classify it as FAQ. Do not assume it is an emergency.
+    Extract the location if mentioned.
+    You MUST return valid JSON ONLY.
+    Format: {"intent": "EMERGENCY" | "NAVIGATION" | "EVENTS" | "SERVICES" | "ACCOMMODATION" | "FAQ", "location": "string or null", "summary": "string"}`;
+      
       const llamaRes = await fetch("https://api.groq.com/openai/v1/chat/completions", {
         method: "POST",
         headers: {
