@@ -46,26 +46,24 @@ export async function POST(req: Request) {
     Format: {"intent": "FAQ" | "EMERGENCY", "location": "string or null", "summary": "string"}`;
 
     const llamaRes = await fetch("https://api.groq.com/openai/v1/chat/completions", {
-        method: "POST",
-        headers: {
-          "Authorization": `Bearer ${process.env.GROQ_API_KEY}`,
-          "Content-Type": "application/json"
-        },
-        body: JSON.stringify({
-          model: "llama-3.1-8b-instant", // Upgraded to a safer free-tier model
-          messages: [
-            { role: "system", content: systemPrompt },
-            { role: "user", content: transcript }
-          ],
-          response_format: { type: "json_object" } 
-        })
-      });
-  
-      if (!llamaRes.ok) {
-         const errorDetails = await llamaRes.text();
-         console.error("Groq LLaMA Error Details:", errorDetails);
-         throw new Error(`LLaMA API failed: ${llamaRes.statusText}`);
-      }
+      method: "POST",
+      headers: {
+        "Authorization": `Bearer ${process.env.GROQ_API_KEY}`,
+        "Content-Type": "application/json"
+      },
+      body: JSON.stringify({
+        model: "llama3-70b-8192",
+        messages: [
+          { role: "system", content: systemPrompt },
+          { role: "user", content: transcript }
+        ],
+        response_format: { type: "json_object" } // Forces Groq to return clean JSON
+      })
+    });
+
+    if (!llamaRes.ok) {
+       throw new Error(`LLaMA API failed: ${llamaRes.statusText}`);
+    }
 
     const llamaData = await llamaRes.json();
     const aiDecision = JSON.parse(llamaData.choices[0].message.content);
