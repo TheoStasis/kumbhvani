@@ -121,6 +121,40 @@ export async function POST(req: Request) {
       KNOWLEDGE CONTEXT:
       ${knowledgeContext}`;
 
+      const finalRAGRes = await fetch("https://api.groq.com/openai/v1/chat/completions", {
+        method: "POST",
+        headers: {
+          "Authorization": `Bearer ${process.env.GROQ_API_KEY}`,
+          "Content-Type": "application/json"
+        },
+        body: JSON.stringify({
+          model: "llama-3.1-8b-instant",
+          messages: [
+            { role: "system", content: ragPrompt },
+            { role: "user", content: transcript }
+          ]
+        })
+      });
+
+      if (!finalRAGRes.ok) {
+        throw new Error("RAG LLaMA Generation failed");
+      }
+
+      const finalRAGData = await finalRAGRes.json();
+      const synthesizedAnswer = finalRAGData.choices[0].message.content;
+
+      return NextResponse.json({ 
+        message: synthesizedAnswer,
+        intent: aiDecision.intent // Passing intent back to frontend to highlight specific grid icons in Phase 8
+      });
+    }
+
+  } catch (error) {
+    console.error("Pipeline Error:", error);
+    return NextResponse.json({ error: "Internal Server Error" }, { status: 500 });
+  }
+}
+
 
 
 
