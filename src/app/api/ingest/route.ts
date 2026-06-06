@@ -16,28 +16,27 @@ export async function POST(req: Request) {
       }
   
       // --- STEP 1: TRANSCRIPTION & TRANSLATION (Groq Whisper) ---
-      const groqAudioFormData = new FormData();
-      groqAudioFormData.append("file", audioFile);
-      groqAudioFormData.append("model", "whisper-large-v3");
-  
-      const whisperRes = await fetch("https://api.groq.com/openai/v1/audio/translations", {
-        method: "POST",
-        headers: {
-          "Authorization": `Bearer ${process.env.GROQ_API_KEY}`
-        },
-        body: groqAudioFormData
-      });
-      if (!whisperRes.ok) {
-        throw new Error(`Whisper API failed: ${whisperRes.statusText}`);
-      }
-  
-      const whisperData = await whisperRes.json();
-      const transcript = whisperData.text;
-      console.log("WHISPER HEARD:", transcript);
-  
-      if (!transcript) {
-        return NextResponse.json({ message: "Could not hear any speech. Please try again." });
-      }
+    const groqAudioFormData = new FormData();
+    groqAudioFormData.append("file", audioFile);
+    groqAudioFormData.append("model", "whisper-large-v3");
+    groqAudioFormData.append("response_format", "verbose_json"); // NEW: Force Whisper to return the language code
+
+    const whisperRes = await fetch("https://api.groq.com/openai/v1/audio/translations", {
+      method: "POST",
+      headers: { "Authorization": `Bearer ${process.env.GROQ_API_KEY}` },
+      body: groqAudioFormData
+    });
+
+    if (!whisperRes.ok) throw new Error(`Whisper API failed: ${whisperRes.statusText}`);
+
+    const whisperData = await whisperRes.json();
+    const transcript = whisperData.text;
+    const detectedLang = whisperData.language || "en"; // Extract the language
+    console.log(`WHISPER HEARD (${detectedLang}):`, transcript);
+
+    if (!transcript) {
+      return NextResponse.json({ message: "Could not hear any speech. Please try again." });
+    }
   
       // --- STEP 2: INTENT CLASSIFICATION (Groq LLaMA 3) ---
       // UPDATED: Now categorizes into specific Mahakumbh services
@@ -89,7 +88,8 @@ export async function POST(req: Request) {
        }
        return NextResponse.json({ 
         message: `EMERGENCY DISPATCHED: Help is on the way to ${aiDecision.location || "your location"}.`,
-        intent: aiDecision.intent
+        intent: aiDecision.intent,
+        language: detectedLang
       });
       
     } else {
@@ -116,12 +116,15 @@ export async function POST(req: Request) {
         : "No specific information found in the guidebook for this query.";
 
       // 4. Send the facts + the user's question back to the LLM to synthesize an answer
-      const ragPrompt = `You are KumbhVani, a helpful assistant at the Mahakumbh festival.
-      Answer the user's query using ONLY the provided knowledge context below. Keep it conversational, warm, and concise (1-2 sentences).
-      If the context does not contain the answer, politely say you don't have that specific information but direct them to the nearest help desk.
-      
-      KNOWLEDGE CONTEXT:
-      ${knowledgeContext}`;
+     
+     const ragPrompt = `You are KumbhVani, a helpful assistant at the Mahakumbh festival.
+     Answer the user's query using ONLY the provided knowledge context below. Keep it conversational, warm, and concise (1-2 sentences).
+     If the context does not contain the answer, politely say you don't have that specific information but direct them to the nearest help desk.
+     
+     CRITICAL RULE: You MUST translate and write your final response entirely in the language code '${detectedLang}'. Do not use English unless the code is 'en'.
+     
+     KNOWLEDGE CONTEXT:
+     ${knowledgeContext}`;
 
       const finalRAGRes = await fetch("https://api.groq.com/openai/v1/chat/completions", {
         method: "POST",
@@ -147,8 +150,9 @@ export async function POST(req: Request) {
 
       return NextResponse.json({ 
         message: synthesizedAnswer,
-        intent: aiDecision.intent // Passing intent back to frontend to highlight specific grid icons in Phase 8
-      });
+        intent: aiDecision.intent, // Passing intent back to frontend to highlight specific grid icons in Phase 8
+        language: detectedLang
+       });
     }
 
   } catch (error) {

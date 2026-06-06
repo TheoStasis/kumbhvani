@@ -63,6 +63,16 @@ export default function PilgrimHub() {
         const data = await response.json();
         setAiResponse(data.message || "Request sent successfully.");
         setActiveIntent(data.intent || "FAQ");
+
+        // --- NEW: Native Browser Text-to-Speech ---
+        window.speechSynthesis.cancel(); // Stop any existing audio
+        const speech = new SpeechSynthesisUtterance(data.message);
+        if (data.language) {
+          speech.lang = data.language; // Helps the browser choose the right local accent
+        }
+        window.speechSynthesis.speak(speech);
+        // -----------------------------------------
+
       } else {
         setAiResponse("Error connecting to the control room.");
       }
