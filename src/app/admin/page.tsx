@@ -68,3 +68,27 @@ export default function AdminDashboard() {
             <span className="font-bold text-neutral-800 text-sm tracking-wide">LIVE FEED ACTIVE</span>
           </div>
         </div>
+
+        {/* Alerts List */}
+        {alerts.length === 0 ? (
+          <div className="text-center p-16 bg-white rounded-2xl shadow-sm border border-neutral-200">
+            <p className="text-2xl font-bold text-neutral-400">No active emergencies.</p>
+          </div>
+        ) : (
+          <div className="space-y-6">
+            {alerts.map((alert) => (
+              <div 
+                key={alert.id} 
+                className="border-l-[12px] border-red-600 bg-white p-6 rounded-r-2xl shadow-lg flex flex-col gap-3 animate-in slide-in-from-top-4 duration-300"
+              >
+                <div className="flex justify-between items-start">
+                  <h2 className="text-3xl font-black text-red-700 uppercase tracking-wide">
+                    📍 {alert.location}
+                  </h2>
+                  <span className="text-sm font-bold bg-red-100 text-red-800 px-4 py-1.5 rounded-md border border-red-200">
+                    {new Date(alert.created_at).toLocaleTimeString()}
+                  </span>
+                </div>
+                <p className="text-xl font-bold text-neutral-800">
+                  Threat: {alert.emergency_type}
+                </p>
