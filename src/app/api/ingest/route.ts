@@ -6,6 +6,28 @@ const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL!;
 const supabaseKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!;
 const supabase = createClient(supabaseUrl, supabaseKey);
 
+export async function POST(req: Request) {
+    try {
+      const formData = await req.formData();
+      const audioFile = formData.get("audio");
+  
+      if (!audioFile) {
+        return NextResponse.json({ error: "No audio file provided" }, { status: 400 });
+      }
+  
+      // --- STEP 1: TRANSCRIPTION & TRANSLATION (Groq Whisper) ---
+      const groqAudioFormData = new FormData();
+      groqAudioFormData.append("file", audioFile);
+      groqAudioFormData.append("model", "whisper-large-v3");
+  
+      const whisperRes = await fetch("https://api.groq.com/openai/v1/audio/translations", {
+        method: "POST",
+        headers: {
+          "Authorization": `Bearer ${process.env.GROQ_API_KEY}`
+        },
+        body: groqAudioFormData
+      });
+
 
 
 
