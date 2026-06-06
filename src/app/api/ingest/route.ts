@@ -27,6 +27,26 @@ export async function POST(req: Request) {
         },
         body: groqAudioFormData
       });
+      if (!whisperRes.ok) {
+        throw new Error(`Whisper API failed: ${whisperRes.statusText}`);
+      }
+  
+      const whisperData = await whisperRes.json();
+      const transcript = whisperData.text;
+      console.log("WHISPER HEARD:", transcript);
+  
+      if (!transcript) {
+        return NextResponse.json({ message: "Could not hear any speech. Please try again." });
+      }
+  
+      // --- STEP 2: INTENT CLASSIFICATION (Groq LLaMA 3) ---
+      // UPDATED: Now categorizes into specific Mahakumbh services
+      const systemPrompt = `You are a Mahakumbh emergency router. 
+      Determine if the user's text is a dangerous situation (EMERGENCY) or a general inquiry (NAVIGATION, EVENTS, SERVICES, ACCOMMODATION, FAQ).
+      EMERGENCY triggers include: fire, stampede, crushing, injury, or urgent calls for help.
+      Extract the location if mentioned.
+      You MUST return valid JSON ONLY.
+      Format: {"intent": "EMERGENCY" | "NAVIGATION" | "EVENTS" | "SERVICES" | "ACCOMMODATION" | "FAQ", "location": "string or null", "summary": "string"}`;
 
 
 
