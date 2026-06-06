@@ -41,8 +41,11 @@ export async function POST(req: Request) {
     }
 
     // --- STEP 2: INTENT CLASSIFICATION (Groq LLaMA 3) ---
-    const systemPrompt = `You are a Mahakumbh emergency router. Read the user text. Determine if it is a general question (FAQ) or a dangerous situation (EMERGENCY). Extract the location if mentioned. 
-    You MUST return valid JSON ONLY. No markdown, no conversational text.
+    const systemPrompt = `You are a Mahakumbh emergency router. 
+    Determine if the user's text is a general question (FAQ) or a dangerous, life-threatening situation (EMERGENCY). 
+    EMERGENCY triggers include: fire, stampede, crushing, injury, or urgent calls for help.
+    Extract the location if mentioned.
+    You MUST return valid JSON ONLY.
     Format: {"intent": "FAQ" | "EMERGENCY", "location": "string or null", "summary": "string"}`;
 
     const llamaRes = await fetch("https://api.groq.com/openai/v1/chat/completions", {
