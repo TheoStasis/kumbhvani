@@ -60,3 +60,7 @@ const mahakumbhData = [
         console.error(`💥 Failed to process ${item.title}:`, err);
       }
     }
+    console.log("Seeding complete! Check your Supabase dashboard.");
+}
+
+seedDatabase();
