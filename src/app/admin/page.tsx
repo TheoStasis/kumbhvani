@@ -30,3 +30,23 @@ export default function AdminDashboard() {
           setAlerts(data || []);
         }
       };
+      fetchAlerts();
+
+    // 2. The Realtime Magic: Listen for new INSERTs
+    const channel = supabase
+      .channel('realtime_alerts')
+      .on(
+        'postgres_changes',
+        { event: 'INSERT', schema: 'public', table: 'emergency_dispatches' },
+        (payload) => {
+          // Push new alert to the top of the list
+          setAlerts((prev) => [payload.new as Alert, ...prev]);
+        }
+      )
+      .subscribe();
+
+    // Cleanup the subscription when leaving the page
+    return () => {
+      supabase.removeChannel(channel);
+    };
+  }, []);
