@@ -103,10 +103,13 @@ export default function PilgrimHub() {
         // Grab all available voices on the computer
         const voices = synth.getVoices();
         
-        if (data.language === 'hi') {
+        if (data.language === 'hi' || data.language === 'hindi') {
           speech.lang = 'hi-IN';
-          // Force it to use a voice that specifically supports Hindi or Indian English
-          const hindiVoice = voices.find(v => v.lang.includes('hi') || v.lang.includes('IN'));
+          // 1. Prioritize Google's high-quality cloud voice
+          // 2. Fall back to any strict 'hi-IN' OS voice
+          const hindiVoice = voices.find(v => v.name === 'Google हिन्दी') || 
+                             voices.find(v => v.lang === 'hi-IN' || v.lang === 'hi');
+          
           if (hindiVoice) {
             speech.voice = hindiVoice;
           }
