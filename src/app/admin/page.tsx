@@ -7,6 +7,8 @@ import { AlertTriangle, CheckCircle2, MapPin, Lock, LogOut } from 'lucide-react'
 type Alert = {
   id: string;
   location: string;
+  lat: string | null; // NEW
+  lng: string | null; // NEW
   emergency_type: string;
   original_audio_text: string;
   status: string;
@@ -197,10 +199,23 @@ export default function AdminDashboard() {
                 className="group border-l-[12px] border-red-600 bg-white p-6 rounded-r-2xl shadow-lg flex flex-col gap-4 animate-in slide-in-from-top-4 duration-300 relative"
               >
                 <div className="flex justify-between items-start pr-32">
-                  <h2 className="text-2xl font-black text-red-700 uppercase tracking-wide flex items-center gap-2">
-                    <MapPin size={24} className="text-red-600" />
-                    {alert.location}
-                  </h2>
+                  <div className="flex flex-col gap-2">
+                    <h2 className="text-2xl font-black text-red-700 uppercase tracking-wide flex items-center gap-2">
+                      <MapPin size={24} className="text-red-600" />
+                      {alert.location}
+                    </h2>
+                    {alert.lat && alert.lng && (
+                      <a 
+                        href={`https://www.google.com/maps?q=${alert.lat},${alert.lng}`} 
+                        target="_blank" 
+                        rel="noopener noreferrer"
+                        className="inline-flex items-center gap-1 bg-blue-100 hover:bg-blue-200 text-blue-800 text-sm font-bold px-3 py-1 rounded-md transition-colors w-fit border border-blue-200"
+                      >
+                        <MapPin size={16} />
+                        View Live GPS on Map
+                      </a>
+                    )}
+                  </div>
                   <span className="text-sm font-bold bg-red-100 text-red-800 px-4 py-1.5 rounded-md border border-red-200">
                     {new Date(alert.created_at).toLocaleTimeString()}
                   </span>

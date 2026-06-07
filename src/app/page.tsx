@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useRef } from 'react';
+import { useState, useRef, useEffect } from 'react';
 import { Mic, MapPin, Calendar, HeartHandshake, Home, AlertTriangle, Info } from 'lucide-react';
 
 export default function PilgrimHub() {
@@ -9,9 +9,26 @@ export default function PilgrimHub() {
   const [aiResponse, setAiResponse] = useState("");
   const [activeIntent, setActiveIntent] = useState<string | null>(null);
   
+  const [coords, setCoords] = useState<{lat: string, lng: string} | null>(null);
+  useEffect(() => {
+    if ("geolocation" in navigator) {
+      navigator.geolocation.getCurrentPosition(
+        (position) => {
+          setCoords({
+            lat: position.coords.latitude.toString(),
+            lng: position.coords.longitude.toString()
+          });
+        },
+        (error) => console.warn("GPS access denied or failed", error),
+        { enableHighAccuracy: true }
+      );
+    }
+  }, []);
   const mediaRecorderRef = useRef<MediaRecorder | null>(null);
   const audioChunksRef = useRef<BlobPart[]>([]);
 
+
+  
   const startRecording = async () => {
     try {
       const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
@@ -30,7 +47,18 @@ export default function PilgrimHub() {
         sendAudioToAI(audioBlob);
         stream.getTracks().forEach(track => track.stop());
       };
-
+      // NEW: Grab GPS silently in the background
+      // if ("geolocation" in navigator) {
+      //   navigator.geolocation.getCurrentPosition(
+      //     (position) => {
+      //       setCoords({
+      //         lat: position.coords.latitude.toString(),
+      //         lng: position.coords.longitude.toString()
+      //       });
+      //     },
+      //     (error) => console.warn("GPS access denied or failed", error)
+      //   );
+      // }
       mediaRecorder.start();
       setIsRecording(true);
       setAiResponse(""); 
@@ -52,7 +80,10 @@ export default function PilgrimHub() {
     setIsProcessing(true);
     const formData = new FormData();
     formData.append('audio', audioBlob, 'recording.webm');
-
+    if (coords) {
+      formData.append('lat', coords.lat);
+      formData.append('lng', coords.lng);
+    }
     try {
       const response = await fetch('/api/ingest', {
         method: 'POST',

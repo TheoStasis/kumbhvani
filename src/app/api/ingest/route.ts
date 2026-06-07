@@ -10,6 +10,8 @@ export async function POST(req: Request) {
     try {
       const formData = await req.formData();
       const audioFile = formData.get("audio");
+      const lat = formData.get("lat") as string | null; // NEW
+      const lng = formData.get("lng") as string | null; // NEW
   
       if (!audioFile) {
         return NextResponse.json({ error: "No audio file provided" }, { status: 400 });
@@ -20,6 +22,7 @@ export async function POST(req: Request) {
     groqAudioFormData.append("file", audioFile);
     groqAudioFormData.append("model", "whisper-large-v3");
     groqAudioFormData.append("response_format", "verbose_json"); // NEW: Force Whisper to return the language code
+    groqAudioFormData.append("prompt", "नमस्कार, महाकुंभ मेले में आपकी क्या मदद कर सकता हूँ?");
 
     const whisperRes = await fetch("https://api.groq.com/openai/v1/audio/transcriptions", {
       method: "POST",
@@ -31,7 +34,14 @@ export async function POST(req: Request) {
 
     const whisperData = await whisperRes.json();
     const transcript = whisperData.text;
-    const detectedLang = whisperData.language || "en"; // Extract the language
+    
+    // NEW: The Urdu Ban
+    let detectedLang = whisperData.language || "en";
+    if (detectedLang === "ur") {
+        detectedLang = "hi";
+        console.log("Hijacked 'ur' and forced to 'hi'");
+    }
+
     console.log(`WHISPER HEARD (${detectedLang}):`, transcript);
 
     if (!transcript) {
@@ -78,6 +88,8 @@ export async function POST(req: Request) {
        // THE PANIC LANE
        const { error } = await supabase.from('emergency_dispatches').insert({
          location: aiDecision.location || "Unknown Location",
+         lat: lat || null,  // NEW
+         lng: lng || null,  // NEW
          emergency_type: aiDecision.summary,
          original_audio_text: transcript
        });
@@ -133,7 +145,7 @@ export async function POST(req: Request) {
           "Content-Type": "application/json"
         },
         body: JSON.stringify({
-          model: "llama-3.1-8b-instant",
+          model: "llama-3.3-70b-versatile",
           messages: [
             { role: "system", content: ragPrompt },
             { role: "user", content: transcript }
