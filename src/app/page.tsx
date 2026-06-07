@@ -8,6 +8,7 @@ export default function PilgrimHub() {
   const [isProcessing, setIsProcessing] = useState(false);
   const [aiResponse, setAiResponse] = useState("");
   const [activeIntent, setActiveIntent] = useState<string | null>(null);
+  const [voices, setVoices] = useState<SpeechSynthesisVoice[]>([]);
   
   const [coords, setCoords] = useState<{lat: string, lng: string} | null>(null);
   useEffect(() => {
@@ -23,6 +24,19 @@ export default function PilgrimHub() {
         { enableHighAccuracy: true }
       );
     }
+  }, []);
+
+  useEffect(() => {
+    const synth = window.speechSynthesis;
+    
+
+    // Chrome and Edge load them asynchronously, so we must listen for the load event
+    const handleVoicesChanged = () => {
+      setVoices(synth.getVoices());
+    };
+    
+    synth.addEventListener("voiceschanged", handleVoicesChanged);
+    return () => synth.removeEventListener("voiceschanged", handleVoicesChanged);
   }, []);
   const mediaRecorderRef = useRef<MediaRecorder | null>(null);
   const audioChunksRef = useRef<BlobPart[]>([]);
@@ -100,13 +114,9 @@ export default function PilgrimHub() {
         synth.cancel(); // Stop any existing audio
         const speech = new SpeechSynthesisUtterance(data.message);
         
-        // Grab all available voices on the computer
-        const voices = synth.getVoices();
-        
         if (data.language === 'hi' || data.language === 'hindi') {
           speech.lang = 'hi-IN';
-          // 1. Prioritize Google's high-quality cloud voice
-          // 2. Fall back to any strict 'hi-IN' OS voice
+          // Use the pre-loaded React state instead of an empty array
           const hindiVoice = voices.find(v => v.name === 'Google हिन्दी') || 
                              voices.find(v => v.lang === 'hi-IN' || v.lang === 'hi');
           
