@@ -35,11 +35,12 @@ export async function POST(req: Request) {
     const whisperData = await whisperRes.json();
     const transcript = whisperData.text;
     
-    // NEW: The Urdu Ban
-    let detectedLang = whisperData.language || "en";
-    if (detectedLang === "ur") {
-        detectedLang = "hi";
-        console.log("Hijacked 'ur' and forced to 'hi'");
+    // NEW: The Absolute Urdu Ban
+    let detectedLang = whisperData.language || "english";
+    const langLower = detectedLang.toLowerCase();
+    if (langLower === "ur" || langLower === "urdu") {
+        detectedLang = "hindi";
+        console.log("Intercepted Urdu and forced to Hindi");
     }
 
     console.log(`WHISPER HEARD (${detectedLang}):`, transcript);
@@ -53,10 +54,14 @@ export async function POST(req: Request) {
       const systemPrompt = `You are a Mahakumbh emergency router. 
     Determine if the user's text is a dangerous situation (EMERGENCY) or a general inquiry (NAVIGATION, EVENTS, SERVICES, ACCOMMODATION, FAQ).
     EMERGENCY triggers include: fire, stampede, crushing, injury, or urgent calls for help.
-    CRITICAL RULE: If the text is conversational, unclear, or just a short phrase with no obvious threat (e.g., "yes", "hello", "I am coming"), you MUST classify it as FAQ. Do not assume it is an emergency.
     Extract the location if mentioned.
+    
+    CRITICAL RULES: 
+    1. 'summary' and 'location' MUST be in strictly ENGLISH for the admin dashboard.
+    2. 'user_message' MUST be a 1-sentence response directly to the user telling them help is on the way. Write this entirely in the language they spoke (If they spoke Urdu or Hindi, you MUST write 'user_message' strictly in Devanagari Hindi script. NEVER use Perso-Arabic).
+    
     You MUST return valid JSON ONLY.
-    Format: {"intent": "EMERGENCY" | "NAVIGATION" | "EVENTS" | "SERVICES" | "ACCOMMODATION" | "FAQ", "location": "string or null", "summary": "string"}`;
+    Format: {"intent": "EMERGENCY" | "NAVIGATION" | "EVENTS" | "SERVICES" | "ACCOMMODATION" | "FAQ", "location": "string or null", "summary": "string", "user_message": "string"}`;
       
       const llamaRes = await fetch("https://api.groq.com/openai/v1/chat/completions", {
         method: "POST",
@@ -65,7 +70,7 @@ export async function POST(req: Request) {
           "Content-Type": "application/json"
         },
         body: JSON.stringify({
-          model: "llama-3.1-8b-instant",
+          model: "llama-3.3-70b-versatile",
           messages: [
             { role: "system", content: systemPrompt },
             { role: "user", content: transcript }
@@ -98,8 +103,9 @@ export async function POST(req: Request) {
          console.error("Supabase Error:", error);
          return NextResponse.json({ message: "System error logging dispatch." }, { status: 500 });
        }
-       return NextResponse.json({ 
-        message: `EMERGENCY DISPATCHED: Help is on the way to ${aiDecision.location || "your location"}.`,
+      // THE PANIC LANE RETURN
+      return NextResponse.json({ 
+        message: aiDecision.user_message || "Help is on the way to your location.",
         intent: aiDecision.intent,
         language: detectedLang
       });
@@ -129,14 +135,18 @@ export async function POST(req: Request) {
 
       // 4. Send the facts + the user's question back to the LLM to synthesize an answer
      
-     const ragPrompt = `You are KumbhVani, a helpful assistant at the Mahakumbh festival.
-     Answer the user's query using ONLY the provided knowledge context below. Keep it conversational, warm, and concise (1-2 sentences).
-     If the context does not contain the answer, politely say you don't have that specific information but direct them to the nearest help desk.
-     
-     CRITICAL RULE: You MUST translate and write your final response entirely in the language code '${detectedLang}'. Do not use English unless the code is 'en'.
-     
-     KNOWLEDGE CONTEXT:
-     ${knowledgeContext}`;
+      const ragPrompt = `You are KumbhVani, a helpful assistant at the Mahakumbh festival.
+      Answer the user's query using ONLY the provided knowledge context below. Keep it conversational, warm, and concise (1-2 sentences).
+      If the context does not contain the answer, politely say you don't have that specific information but direct them to the nearest help desk.
+      
+      CRITICAL MULTILINGUAL RULE: 
+      The user's language is '${detectedLang}'. 
+      You must reply in that exact language. 
+      HOWEVER, if the language is 'ur' (Urdu) or 'hi' (Hindi), you MUST write your final answer EXCLUSIVELY in Devanagari (Hindi) script. NEVER output Perso-Arabic script.
+      DO NOT OUTPUT ENGLISH unless the language is strictly 'english' or 'en'.
+      
+      KNOWLEDGE CONTEXT:
+      ${knowledgeContext}`;
 
       const finalRAGRes = await fetch("https://api.groq.com/openai/v1/chat/completions", {
         method: "POST",
