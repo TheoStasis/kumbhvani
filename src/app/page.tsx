@@ -61,18 +61,7 @@ export default function PilgrimHub() {
         sendAudioToAI(audioBlob);
         stream.getTracks().forEach(track => track.stop());
       };
-      // NEW: Grab GPS silently in the background
-      // if ("geolocation" in navigator) {
-      //   navigator.geolocation.getCurrentPosition(
-      //     (position) => {
-      //       setCoords({
-      //         lat: position.coords.latitude.toString(),
-      //         lng: position.coords.longitude.toString()
-      //       });
-      //     },
-      //     (error) => console.warn("GPS access denied or failed", error)
-      //   );
-      // }
+     
       mediaRecorder.start();
       setIsRecording(true);
       setAiResponse(""); 
