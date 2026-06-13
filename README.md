@@ -23,7 +23,7 @@
 * **Data & Tracking:** Live GPS Telemetry
 
 ## 🏗️ System Architecture
-
+![KumbhVani System Architecture](./Screenshot%202026-06-07%20221407.png)
 
 
 KumbhVani utilizes a high-speed, dual-pipeline architecture designed to process multimodal inputs and route them with sub-3s latency.
